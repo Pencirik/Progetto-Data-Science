@@ -99,7 +99,7 @@ gender = c("female", "male", "NA")
 
 genderTot = data.frame(gender, genderDeathCount) #raggruppo i dati trovati nei 7 anni in un solo data frame
 
-genderYearlyMean = data.frame(gender, genderMeanDeathCount = as.integer(genderTot$genderDeathCount/7))
+genderYearlyMean = data.frame(gender, count = as.integer(genderTot$genderDeathCount/7))
 
 genderAllYears = data.frame(gender14$count)
 genderAllYears[[2]] = gender15$count
@@ -345,7 +345,7 @@ for (n in 1:6) {
 }
 ageTot = data.frame(ageRange, ageSum) #raggruppo i dati trovati nei 7 anni in un solo data frame
 
-ageYearlyMean = data.frame(ageRange, ageMeanDeathCount = as.integer(ageTot$ageSum/7))
+ageYearlyMean = data.frame(ageRange, count = as.integer(ageTot$ageSum/7))
 
 #--------organizzazione dei mesi--------
 
@@ -384,9 +384,9 @@ for (n in 1:12) {
 }
 monthTot = data.frame( month, monthDeathCount) #raggruppo i dati trovati nei 7 anni in un solo data frame
 
-monthYearlyMean = data.frame(month, monthMeanDeathCount = as.integer(monthTot$monthDeathCount/7)) #stimo una media dei morti ogni anno in ogni periodo dell'anno
+monthYearlyMean = data.frame(month, count = as.integer(monthTot$monthDeathCount/7)) #stimo una media dei morti ogni anno in ogni periodo dell'anno
 
-yearlyDeaths = (sum(monthYearlyMean$monthMeanDeathCount)) #calcolo quante morti sul posto di lavoro ci sono mediamente all'anno
+yearlyDeaths = (sum(monthYearlyMean$count)) #calcolo quante morti sul posto di lavoro ci sono mediamente all'anno
 
 deathPerYear = c(0,0,0,0,0,0,0)
 deathPerYear[1] = sum(month14$count)
@@ -404,7 +404,7 @@ deathPerYear[7] = sum(month20$count)
 ```
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo=TRUE, message = FALSE, warning = FALSE, paged.print=TRUE)
+knitr::opts_chunk$set(echo=FALSE, message = FALSE, warning = FALSE, paged.print=TRUE)
 ```
 
 ## Database pubblici
@@ -435,40 +435,35 @@ Source: https://www.coshnetwork.org/fatality-database
 
 ## Organizzazione dei dati
 
-Dati 6 anni da analizzare, è importante cominciare ad organizzare i dati per poterli usare al meglio.
+Nei dati riportati di seguito vi sarà una distinzione organizzativa per varie categorie.
 
-```{r Importazione csv}
-#importo le tabelle con i dati sulle date, età, sesso della vittima e 
-#stato di appartenenza dei casi negli USA
-library(readr)
-library(tidyr)
-library(dplyr)
+Organizzazione per:
 
-year14 = read_csv("Database/Incidenti_Lavoro_USA_2014.csv") %>% 
-  separate(event_date, into = c("month", "day", "year"), sep = "/", convert = TRUE) %>%
-  subset(select = c("month", "age", "gender", "event_state")) %>%
-  arrange(month)
-```
+  - Genere (male, female, NA)
+
+  - Età (fasce di età)
+
+  - Mese
 
 ## Distinzione di genere
 
-C'è una distinzione di genere? si organizzano i dati in maniera appropriata per scoprirlo.
+C'è una distinzione di genere?
+
+*Riferimenti alla media annuale dal 2014 al 2020*
 
 ```{r Analisi genere delle vittime}
-gender14 = year14 %>%
-  filter(gender == "male" | gender == "female" | is.na(gender)) %>%
-  group_by(gender) %>%
-  summarise(count = n())
-gender14
+genderYearlyMean
 ```
 
 ## Distinzione di genere
+
+*Riferimenti alla media annuale dal 2014 al 2020*
 
 ```{r Grafico genere delle vittime}
 library(ggplot2)
 
-pie(genderYearlyMean$genderMeanDeathCount, main = "Morti sul posto di lavoro", 
-    labels = c("Female", "Male", "NA"))
+pie(genderYearlyMean$count, main = "Morti sul posto di lavoro", 
+    labels = c("Female", "Male", "NA"), col = c("pink", "lightblue", "grey"))
 ```
 
 ```{r Percentuale maschile}
@@ -489,78 +484,50 @@ Source: https://www.zippia.com/advice/male-dominated-careers-female/
 
 ## Fasce di età
 
-Ci sono distinzioni di età? si organizzano i dati in maniera appropriata per scoprirlo.
+Ci sono distinzioni di età?
+
+*Riferimenti alla media annuale dal 2014 al 2020*
 
 ```{r Fasce di età}
-ageRange = c("<18", "19-35", "36-50", "51-75", ">76", "NA")
-ageValues = c(0,0,0,0,0,0)
-
-age14 =list( year14 %>%
-  filter(age <= 18) %>%
-  group_by(age) %>%
-  summarise(count = n()),
-            year14 %>%
-    filter(age >= 19, age <= 35) %>%
-    group_by(age) %>%
-    summarise(count = n()),
-            year14 %>%
-    filter(age >= 36, age <= 50) %>%
-    group_by(age) %>%
-    summarise(count = n()),
-            year14 %>%
-    filter(age >= 51, age <= 75) %>%
-    group_by(age) %>%
-    summarise(count = n()),
-            year14 %>%
-    filter(age >= 76) %>%
-    group_by(age) %>%
-    summarise(count = n()),
-            year14 %>%
-    filter(is.na(age)) %>%
-    group_by(age) %>%
-    summarise(count = n())
-  )
-
-for (n in 1:6) {
-  ageValues[[n]] = sum(age14[[n]]$count)
-}
-age14Tot = data.frame(ageRange, ageValues)
-age14Tot
+ageYearlyMean
 ```
 
 ## Fasce di età
 
+*Riferimenti alla media annuale dal 2014 al 2020*
+
 ```{r Grafico fasce di età}
-barplot(ageYearlyMean$ageMeanDeathCount, xlab = "Age", ylab = "Count", 
+barplot(ageYearlyMean$count, xlab = "Age", ylab = "Count", 
         main = "Morti sul posto di lavoro", names.arg = ageTot$ageRange)
 ```
 
 La fascia più colpita è quella dei 51-75 anni. Causa?
 
-Non c'è una vera risposta, si pensa al tipo di lavoro svolto: internet ha cambiato ed evoluto il concetto di lavoro.
+Logicamente, si pensa al tipo di lavoro svolto: internet ha cambiato ed evoluto il concetto di lavoro.
 
 I giovani lavoratori possono scegliere di lavorare in ambito digitale, una volta non c'era questa possibilità o era molto più ristretta.
 
 ## Organizzazione dei mesi 
 
-C'è distinzione nel periodo dell'anno? si organizzano i dati in maniera appropriata per scoprirlo.
+C'è distinzione nel periodo dell'anno?
+
+*Riferimenti alla media annuale dal 2014 al 2020*
 
 ```{r Mesi}
-month14 = year14 %>%
-  group_by(month) %>%
-  summarise(count = n())
-month14
+monthYearlyMean
 ```
 
 ## Organizzazione dei mesi
 
+*Riferimenti alla media annuale dal 2014 al 2020*
+
 ```{r Grafico dei mesi}
-barplot(monthYearlyMean$monthMeanDeathCount, xlab = "Month", ylab = "Count", 
+barplot(monthYearlyMean$count, xlab = "Month", ylab = "Count", 
         main = "Morti sul posto di lavoro", 
         names.arg = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
                       "Sep", "Oct", "Nov", "Dec"))
-boxplot(monthYearlyMean$monthMeanDeathCount,  main = "Morti sul posto di lavoro")
-summary(monthYearlyMean$monthMeanDeathCount)
+boxplot(monthYearlyMean$count,  main = "Morti sul posto di lavoro")
+summary(monthYearlyMean$count)
 ```
 
 Il grafico è abbastanza piatto, Febbraio ha il 56% di morti di Aprile.
@@ -568,7 +535,6 @@ Il grafico è abbastanza piatto, Febbraio ha il 56% di morti di Aprile.
 ```{r Differenza Febbraio-Aprile}
 maxDifference = monthYearlyMean[2,2] / monthYearlyMean[4,2]
 maxDifference
-
 ```
 
 Sono registrate in media 1300 morti all'anno.
