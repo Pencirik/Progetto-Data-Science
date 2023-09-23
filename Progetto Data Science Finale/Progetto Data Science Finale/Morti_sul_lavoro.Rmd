@@ -1,0 +1,557 @@
+---
+title: "Morti sul luogo di lavoro (USA, 2014 - 2020)"
+author: "Federico Magnabosco 158486"
+date: "27/09/2023"
+output:
+  ioslides_presentation:
+    widescreen: true
+    css: 'scrollable_slides.css'
+---
+
+```{r codice necessario, echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+library(igraph)
+library(tibble)
+library(readr)
+library(tidyr)
+library(ggplot2)
+library(dplyr)
+
+#--------lettura file CSV ed organizzazione della data--------
+
+year14 = read_csv("Database/Incidenti_Lavoro_USA_2014.csv") %>% 
+  separate(event_date, into = c("month", "day", "year"), sep = "/", convert = TRUE) %>%
+  subset(select = c("month", "age", "gender", "event_state")) %>%
+  arrange(month)
+
+year15 = read_csv("Database/Incidenti_Lavoro_USA_2015.csv") %>% 
+  separate(event_date, into = c("day","month" ,"year"), sep = "/", convert = TRUE) %>%
+  subset(select = c("month", "age", "gender", "event_state")) %>%
+  arrange(month)
+
+year16 = read_csv("Database/Incidenti_Lavoro_USA_2016.csv") %>% 
+  separate(event_date, into = c("day", "month","year"), sep = "/", convert = TRUE) %>%
+  subset(select = c("month", "age", "gender", "event_state")) %>%
+  arrange(month)
+
+year17 = read_csv("Database/Incidenti_Lavoro_USA_2017.csv") %>% 
+  separate(event_date, into = c("month", "day", "year"), sep = "/", convert = TRUE) %>%
+  subset(select = c("month", "age", "gender", "event_state")) %>%
+  arrange(month)
+
+year18 = read_csv("Database/Incidenti_Lavoro_USA_2018.csv") %>% 
+  separate(event_date, into = c("year","month", "day"), sep = "-", convert = TRUE) %>%
+  subset(select = c("month", "age", "gender", "event_state")) %>%
+  arrange(month)
+
+year19 = read_csv("Database/Incidenti_Lavoro_USA_2019.csv") %>% 
+  separate(event_date, into = c("day", "month", "year"), sep = "/", convert = TRUE) %>%
+  subset(select = c("month", "age", "gender", "event_state")) %>%
+  arrange(month)
+
+year20 = read_csv("Database/Incidenti_Lavoro_USA_2020.csv") %>% 
+  separate(event_date, into = c("month", "day", "year"), sep = "/", convert = TRUE) %>%
+  subset(select = c("month", "age", "gender", "event_state")) %>%
+  arrange(month)
+
+#--------organizzazione del genere delle vittime--------
+
+gender14 = year14 %>%
+  filter(gender == "male" | gender == "female" | is.na(gender)) %>%
+  group_by(gender) %>%
+  summarise(count = n())
+
+gender15 = year15 %>%
+  filter(gender == "male" | gender == "female" | is.na(gender)) %>%
+  group_by(gender) %>%
+  summarise(count = n())
+
+gender16 = year16 %>%
+  filter(gender == "male" | gender == "female" | is.na(gender)) %>%
+  group_by(gender) %>%
+  summarise(count = n())
+
+gender17 = year17 %>%
+  filter(gender == "male" | gender == "female" | is.na(gender)) %>%
+  group_by(gender) %>%
+  summarise(count = n())
+
+gender18 = year18 %>%
+  filter(gender == "male" | gender == "female" | is.na(gender)) %>%
+  group_by(gender) %>%
+  summarise(count = n())
+
+gender19 = year19 %>%
+  filter(gender == "male" | gender == "female" | is.na(gender)) %>%
+  group_by(gender) %>%
+  summarise(count = n())
+
+gender20 = year20 %>%
+  filter(gender == "male" | gender == "female" | is.na(gender)) %>%
+  group_by(gender) %>%
+  summarise(count = n())
+
+genderDeathCount = c(0,0,0)
+for (n in 1:3) {
+  genderDeathCount[[n]] = gender14[[n,2]] + gender15[[n,2]] + gender16[[n,2]] + gender17[[n,2]] + gender18[[n,2]] + gender19[[n,2]] + gender20[[n,2]]
+}
+
+gender = c("female", "male", "NA")
+
+genderTot = data.frame(gender, genderDeathCount) #raggruppo i dati trovati nei 7 anni in un solo data frame
+
+genderYearlyMean = data.frame(gender, count = as.integer(genderTot$genderDeathCount/7))
+
+genderAllYears = data.frame(gender14$count)
+genderAllYears[[2]] = gender15$count
+genderAllYears[[3]] = gender16$count
+genderAllYears[[4]] = gender17$count
+genderAllYears[[5]] = gender18$count
+genderAllYears[[6]] = gender19$count
+genderAllYears[[7]] = gender20$count
+
+colnames(genderAllYears) = c(2014:2020)
+genderAllYears = as.matrix(genderAllYears)
+#--------organizzazione per fasce di età--------
+
+ageRange = c("<18", "19-35", "36-50", "51-75", ">76", "NA")
+ageValues = c(0,0,0,0,0,0)
+
+age14 = list( year14 %>%
+               filter(age <= 18) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year14 %>%
+               filter(age >= 19 && age <= 35) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year14 %>%
+               filter(age >= 36 && age <= 50) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year14 %>%
+               filter(age >= 51 && age <= 75) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year14 %>%
+               filter(age >= 76) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year14 %>%
+               filter(is.na(age)) %>%
+               group_by(age) %>%
+               summarise(count = n())
+)
+
+for (n in 1:6) {
+  ageValues[[n]] = sum(age14[[n]]$count)
+}
+age14Tot = data.frame(ageRange, ageValues)
+
+
+age15 =list( year15 %>%
+               filter(age <= 18) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year15 %>%
+               filter(age >= 19, age <= 35) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year15 %>%
+               filter(age >= 36, age <= 50) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year15 %>%
+               filter(age >= 51, age <= 75) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year15 %>%
+               filter(age >= 76) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year15 %>%
+               filter(is.na(age)) %>%
+               group_by(age) %>%
+               summarise(count = n())
+)
+
+for (n in 1:6) {
+  ageValues[[n]] = sum(age15[[n]]$count)
+}
+age15Tot = data.frame(ageRange, ageValues)
+
+
+age16 =list( year16 %>%
+               filter(age <= 18) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year16 %>%
+               filter(age >= 19, age <= 35) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year16 %>%
+               filter(age >= 36, age <= 50) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year16 %>%
+               filter(age >= 51, age <= 75) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year16 %>%
+               filter(age >= 76) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year16 %>%
+               filter(is.na(age)) %>%
+               group_by(age) %>%
+               summarise(count = n())
+)
+
+for (n in 1:6) {
+  ageValues[[n]] = sum(age16[[n]]$count)
+}
+age16Tot = data.frame(ageRange, ageValues)
+
+
+age17 =list( year17 %>%
+               filter(age <= 18) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year17 %>%
+               filter(age >= 19, age <= 35) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year17 %>%
+               filter(age >= 36, age <= 50) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year17 %>%
+               filter(age >= 51, age <= 75) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year17 %>%
+               filter(age >= 76) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year17 %>%
+               filter(is.na(age)) %>%
+               group_by(age) %>%
+               summarise(count = n())
+)
+
+for (n in 1:6) {
+  ageValues[[n]] = sum(age17[[n]]$count)
+}
+age17Tot = data.frame(ageRange, ageValues)
+
+
+age18 =list( year18 %>%
+               filter(age <= 18) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year18 %>%
+               filter(age >= 19, age <= 35) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year18 %>%
+               filter(age >= 36, age <= 50) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year18 %>%
+               filter(age >= 51, age <= 75) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year18 %>%
+               filter(age >= 76) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year18 %>%
+               filter(is.na(age)) %>%
+               group_by(age) %>%
+               summarise(count = n())
+)
+
+for (n in 1:6) {
+  ageValues[[n]] = sum(age18[[n]]$count)
+}
+age18Tot = data.frame(ageRange, ageValues)
+
+
+age19 =list( year19 %>%
+               filter(age <= 18) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year19 %>%
+               filter(age >= 19, age <= 35) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year19 %>%
+               filter(age >= 36, age <= 50) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year19 %>%
+               filter(age >= 51, age <= 75) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year19 %>%
+               filter(age >= 76) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year19 %>%
+               filter(is.na(age)) %>%
+               group_by(age) %>%
+               summarise(count = n())
+)
+
+for (n in 1:6) {
+  ageValues[[n]] = sum(age19[[n]]$count)
+}
+age19Tot = data.frame(ageRange, ageValues)
+
+
+age20 =list( year20 %>%
+               filter(age <= 18) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year20 %>%
+               filter(age >= 19, age <= 35) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year20 %>%
+               filter(age >= 36, age <= 50) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year20 %>%
+               filter(age >= 51, age <= 75) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year20 %>%
+               filter(age >= 76) %>%
+               group_by(age) %>%
+               summarise(count = n()),
+             year20 %>%
+               filter(is.na(age)) %>%
+               group_by(age) %>%
+               summarise(count = n())
+)
+
+for (n in 1:6) {
+  ageValues[[n]] = sum(age20[[n]]$count)
+}
+age20Tot = data.frame(ageRange, ageValues)
+
+ageSum = c(0,0,0,0,0,0)
+for (n in 1:6) {
+  ageSum[[n]] = age14Tot[[n,2]] + age15Tot[[n,2]] + age16Tot[[n,2]] + age17Tot[[n,2]] + age18Tot[[n,2]] + age19Tot[[n,2]] + age20Tot[[n,2]] 
+}
+ageTot = data.frame(ageRange, ageSum) #raggruppo i dati trovati nei 7 anni in un solo data frame
+
+ageYearlyMean = data.frame(ageRange, count = as.integer(ageTot$ageSum/7))
+
+#--------organizzazione dei mesi--------
+
+month14 = year14 %>%
+  group_by(month) %>%
+  summarise(count = n())
+
+month15 = year15 %>%
+  group_by(month) %>%
+  summarise(count = n())
+
+month16 = year16 %>%
+  group_by(month) %>%
+  summarise(count = n())
+
+month17 = year17 %>%
+  group_by(month) %>%
+  summarise(count = n())
+
+month18 = year18 %>%
+  group_by(month) %>%
+  summarise(count = n())
+
+month19 = year19 %>%
+  group_by(month) %>%
+  summarise(count = n())
+
+month20 = year20 %>%
+  group_by(month) %>%
+  summarise(count = n())
+
+month = c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+monthDeathCount = c(0,0,0,0,0,0,0,0,0,0,0,0)
+for (n in 1:12) {
+  monthDeathCount[[n]] = month14[[n,2]] + month15[[n,2]] + month16[[n,2]] + month17[[n,2]] + month18[[n,2]] + month19[[n,2]] + month20[[n,2]]
+}
+monthTot = data.frame( month, monthDeathCount) #raggruppo i dati trovati nei 7 anni in un solo data frame
+
+monthYearlyMean = data.frame(month, count = as.integer(monthTot$monthDeathCount/7)) #stimo una media dei morti ogni anno in ogni periodo dell'anno
+
+yearlyDeaths = (sum(monthYearlyMean$count)) #calcolo quante morti sul posto di lavoro ci sono mediamente all'anno
+
+deathPerYear = c(0,0,0,0,0,0,0)
+deathPerYear[1] = sum(month14$count)
+deathPerYear[2] = sum(month15$count)
+deathPerYear[3] = sum(month16$count)
+deathPerYear[4] = sum(month17$count)
+deathPerYear[5] = sum(month18$count)
+deathPerYear[6] = sum(month19$count)
+deathPerYear[7] = sum(month20$count)
+
+#summary(monthMean) mostro dati relativi a media, mediana e valori dei quantili relativi agli 8 anni analizzati
+
+#Tutti i dataset sopra riportati (yearNumero, monthNumero, ageNumero, genderNumero) sono stati calcolati singolarmente poichè le tabelle erano solamente 6, sicuramente si poteva racchiudere ogni dataset tipo in una lista (year = list(year14, year15, .....)) ma per comodità non sono state usate, motivo anche il fatto che sia un progetto piccolo
+
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, message = FALSE, warning = FALSE, paged.print=TRUE)
+```
+
+## Database pubblici
+
+Le morti sul luogo di lavoro sono sempre state, e rimarranno, un problema comune e purtroppo tutt'ora sottovalutato, visti anche i casi ultimamente verificati (anche durante l'alternanza scuola-lavoro).
+
+Scopo: 
+
+  - Informativo
+  
+  - Sensibilizzazione
+
+Essendoci una quantità enorme di variabili da analizzare, lo studio in questione si limiterà a fornire dati per puro scopo informativo e non mira a scoprire le cause principali.
+
+## Dataset
+
+Perchè gli USA?
+
+- Grandi quantità di dati
+
+- Dati aperti al pubblico 
+
+Verranno utilizzati molti meno dati di quelli forniti (es. città, causa, stato, occupazione ecc... non vengono usati)
+
+Non tutti i dati erano standardizzati sotto lo stesso formato.
+
+Source: https://www.coshnetwork.org/fatality-database
+
+## Organizzazione dei dati
+
+Dati 6 anni da analizzare, è importante cominciare ad organizzare i dati per poterli usare al meglio.
+
+Organizzazione per:
+
+  - Genere (male, female, NA)
+
+  - Età (fasce di età)
+
+  - Mese
+
+## Distinzione di genere
+
+C'è una distinzione di genere? si organizzano i dati in maniera appropriata per scoprirlo.
+
+*Riferimenti alla media annuale dal 2014 al 2020*
+
+```{r Analisi genere delle vittime}
+genderYearlyMean
+```
+
+## Distinzione di genere
+
+*Riferimenti alla media annuale dal 2014 al 2020*
+
+```{r Grafico genere delle vittime}
+library(ggplot2)
+
+pie(genderYearlyMean$count, main = "Morti sul posto di lavoro", 
+    labels = c("Female", "Male", "NA"), col = c("pink", "lightblue", "grey"))
+```
+
+```{r Percentuale maschile}
+malePercentage = genderYearlyMean[2,2] / sum(genderYearlyMean$genderMeanDeathCount)
+malePercentage
+```
+C'è una netta distinzione, il genere maschile rientra nel 71% delle vittime.
+
+## Distinzione di genere
+
+Stando ai dati riportati dal Bureau of Labor Statistics (BLS), ossia il dipartimento del lavoro Statunitense, il genere maschile è più propenso a fare lavori manuali come l'elettricista, il meccanico ecc...
+
+La forza lavoro maschile è pari al 96%-98%.
+
+Questo è sicuramente un fattore da tenere in considerazione in quanto, facendo lavori manuali, ci sono più probabilità di commettere incidenti mortali.
+
+Source: https://www.zippia.com/advice/male-dominated-careers-female/
+
+## Fasce di età
+
+Ci sono distinzioni di età? si organizzano i dati in maniera appropriata per scoprirlo.
+
+*Riferimenti alla media annuale dal 2014 al 2020*
+
+```{r Fasce di età}
+ageYearlyMean
+```
+
+## Fasce di età
+
+*Riferimenti alla media annuale dal 2014 al 2020*
+
+```{r Grafico fasce di età}
+barplot(ageYearlyMean$count, xlab = "Age", ylab = "Count", 
+        main = "Morti sul posto di lavoro", names.arg = ageTot$ageRange)
+```
+
+La fascia più colpita è quella dei 51-75 anni. Causa?
+
+Logicamente, si pensa al tipo di lavoro svolto: internet ha cambiato ed evoluto il concetto di lavoro.
+
+I giovani lavoratori possono scegliere di lavorare in ambito digitale, una volta non c'era questa possibilità o era molto più ristretta.
+
+## Organizzazione dei mesi 
+
+C'è distinzione nel periodo dell'anno? si organizzano i dati in maniera appropriata per scoprirlo.
+
+*Riferimenti alla media annuale dal 2014 al 2020*
+
+```{r Mesi}
+monthYearlyMean
+```
+
+## Organizzazione dei mesi
+
+*Riferimenti alla media annuale dal 2014 al 2020*
+
+```{r Grafico dei mesi}
+barplot(monthYearlyMean$count, xlab = "Month", ylab = "Count", 
+        main = "Morti sul posto di lavoro", 
+        names.arg = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
+                      "Sep", "Oct", "Nov", "Dec"))
+boxplot(monthYearlyMean$count,  main = "Morti sul posto di lavoro")
+summary(monthYearlyMean$count)
+```
+
+Il grafico è abbastanza piatto, Febbraio ha il 56% di morti di Aprile.
+
+```{r Differenza Febbraio-Aprile}
+maxDifference = monthYearlyMean[2,2] / monthYearlyMean[4,2]
+maxDifference
+```
+
+Sono registrate in media 1300 morti all'anno.
+
+## Conclusioni
+
+```{r Andamento delle morti in questi anni}
+barplot(genderAllYears, xlab = "Year", ylab = "Count", Main = "Morti sul posto di lavoro", 
+        beside = TRUE, args.legend = list(x = "topright", inset = c(0.15,0)), 
+        legend.text = c("female", "male", "NA"))
+```
+
+In generale si può vedere come, con l'aumentare degli anni, diminuissero le morti annuali.
+
+I dati degli anni del 2019 e del 2020 risultano però "falsati" a causa del CoVid-19.
+Si può notare infatti come nel 2019 si sono registrati dei numeri molto bassi dovuti allo smart working, per poi risalire nel 2020 poichè, nel database preso in considerazione, tra le cause di morti su lavoro, sono registrati anche i casi di CoVid-19.
+
+## Grazie mille dell'attenzione
+
+Domande?
